@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: table-tennis-training
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+    command: npm run dev
+
+  build:
+    build:
+      context: .
+      target: builder
+    container_name: table-tennis-build
+    volumes:
+      - ./dist:/app/dist
+    command: npm run build
+    profiles:
+      - build
+
+  preview:
+    build:
+      context: .
+      target: production
+    container_name: table-tennis-preview
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    profiles:
+      - preview
