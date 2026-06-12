@@ -702,11 +702,14 @@ export class GameScene extends Phaser.Scene {
             this.drawTrajectory();
         }
 
-        if (!this.ballPhysics.isActive && !this.ballLanded && this.currentBall > 0 && !this._missHandled) {
+        if (!this.ballPhysics.isActive && this.currentBall > 0 && !this.ballLanded && !this._missHandled) {
             this._missHandled = true;
-            this.time.delayedCall(500, () => {
+            this.time.delayedCall(300, () => {
                 if (!this.ballLanded) {
-                    this.onBallLanded(null, { x: 0, y: 0, z: 0 });
+                    this.onBallLanded(
+                        this.ballPhysics.landingPosition,
+                        this.ballPhysics.spin
+                    );
                 }
             });
         }

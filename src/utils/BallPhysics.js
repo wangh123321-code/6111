@@ -1,10 +1,10 @@
 export class BallPhysics {
     constructor(config = {}) {
         this.gravity = config.gravity || 9.8;
-        this.airResistance = config.airResistance || 0.02;
-        this.bounceCoeff = config.bounceCoeff || 0.75;
-        this.frictionCoeff = config.frictionCoeff || 0.3;
-        this.magnusCoeff = config.magnusCoeff || 0.0005;
+        this.airResistance = config.airResistance || 0.01;
+        this.bounceCoeff = config.bounceCoeff || 0.7;
+        this.frictionCoeff = config.frictionCoeff || 0.25;
+        this.magnusCoeff = config.magnusCoeff || 0.0008;
         this.tableLength = config.tableLength || 274;
         this.tableWidth = config.tableWidth || 152.5;
         this.netHeight = config.netHeight || 15.25;
@@ -21,6 +21,8 @@ export class BallPhysics {
         this.onLand = null;
         this.landingPosition = null;
         this.hasLanded = false;
+        this.stopAfterDelay = 0;
+        this.elapsedTime = 0;
     }
 
     reset(position = { x: 0, y: 20, z: 0 }) {
@@ -31,17 +33,20 @@ export class BallPhysics {
         this.bounceCount = 0;
         this.landingPosition = null;
         this.hasLanded = false;
+        this.stopAfterDelay = 0;
+        this.elapsedTime = 0;
     }
 
     serve(gesture) {
         const { direction, speed, spin } = gesture;
 
-        const baseSpeed = 300 + speed * 400;
-        const angle = direction.angle !== undefined ? direction.angle : Math.atan2(direction.y, direction.x);
+        const baseSpeed = 380 + speed * 450;
+        const dx = direction.x;
+        const dy = direction.y;
 
-        this.velocity.x = Math.sin(angle) * baseSpeed * 0.5;
-        this.velocity.y = -Math.abs(Math.cos(angle)) * baseSpeed * 0.8;
-        this.velocity.z = 150 + speed * 200;
+        this.velocity.x = dx * baseSpeed * 0.35;
+        this.velocity.z = Math.max(200, -dy * baseSpeed * 0.9 + speed * 100);
+        this.velocity.y = -dy * baseSpeed * 0.3 + 80;
 
         this.setSpin(spin);
 
@@ -49,11 +54,13 @@ export class BallPhysics {
         this.bounceCount = 0;
         this.hasLanded = false;
         this.landingPosition = null;
+        this.stopAfterDelay = 0;
+        this.elapsedTime = 0;
     }
 
     setSpin(spinData) {
         const { type, intensity } = spinData;
-        const baseSpin = intensity * 800;
+        const baseSpin = intensity * 1500;
 
         this.spin = { x: 0, y: 0, z: 0 };
 
@@ -96,18 +103,26 @@ export class BallPhysics {
         if (!this.isActive) return;
 
         const dt = deltaTime / 1000;
+        this.elapsedTime += deltaTime;
 
         this.applyForces(dt);
         this.integrate(dt);
         this.checkCollisions();
 
-        if (this.position.z > this.tableLength + 50 || this.position.y < -50) {
+        if (this.stopAfterDelay > 0) {
+            this.stopAfterDelay -= deltaTime;
+            if (this.stopAfterDelay <= 0) {
+                this.isActive = false;
+            }
+        }
+
+        if (this.position.z > this.tableLength + 50 || this.position.y < -50 || this.elapsedTime > 10000) {
             this.isActive = false;
         }
     }
 
     applyForces(dt) {
-        this.velocity.y += this.gravity * dt * 15;
+        this.velocity.y -= this.gravity * dt * 10;
 
         const speed = Math.hypot(this.velocity.x, this.velocity.y, this.velocity.z);
         if (speed > 0) {
@@ -149,7 +164,7 @@ export class BallPhysics {
         this.position.y += this.velocity.y * dt;
         this.position.z += this.velocity.z * dt;
 
-        const spinDecay = 0.995;
+        const spinDecay = 0.998;
         this.spin.x *= spinDecay;
         this.spin.y *= spinDecay;
         this.spin.z *= spinDecay;
@@ -178,10 +193,12 @@ export class BallPhysics {
     handleTableBounce() {
         this.position.y = this.ballRadius;
 
-        const normalY = 1;
-
         const incidentSpeed = Math.abs(this.velocity.y);
         this.velocity.y = -this.velocity.y * this.bounceCoeff;
+
+        if (Math.abs(this.velocity.y) < 30) {
+            this.velocity.y = 0;
+        }
 
         if (this.onBounce) {
             this.onBounce(this.position, this.bounceCount);
@@ -202,30 +219,28 @@ export class BallPhysics {
 
         this.bounceCount++;
 
-        if (this.bounceCount >= this.maxBounces) {
-            setTimeout(() => {
-                this.isActive = false;
-            }, 500);
+        if (this.bounceCount >= this.maxBounces || (Math.abs(this.velocity.x) < 10 && Math.abs(this.velocity.z) < 10 && Math.abs(this.velocity.y) < 30)) {
+            this.stopAfterDelay = 500;
         }
     }
 
     applySpinEffectOnBounce() {
-        const spinFactor = 0.3;
+        const spinFactor = 0.5;
 
         if (this.spin.x > 50) {
-            this.velocity.z += this.spin.x * spinFactor * 0.1;
+            this.velocity.z += this.spin.x * spinFactor * 0.15;
         } else if (this.spin.x < -50) {
-            this.velocity.z += this.spin.x * spinFactor * 0.1;
+            this.velocity.z += this.spin.x * spinFactor * 0.15;
         }
 
         if (this.spin.y > 50) {
-            this.velocity.x -= this.spin.y * spinFactor * 0.1;
+            this.velocity.x -= this.spin.y * spinFactor * 0.15;
         } else if (this.spin.y < -50) {
-            this.velocity.x -= this.spin.y * spinFactor * 0.1;
+            this.velocity.x -= this.spin.y * spinFactor * 0.15;
         }
 
-        this.spin.x *= 0.6;
-        this.spin.y *= 0.6;
+        this.spin.x *= 0.75;
+        this.spin.y *= 0.75;
     }
 
     checkNetCollision() {
@@ -267,7 +282,7 @@ export class BallPhysics {
     }
 
     getSpinType() {
-        const threshold = 100;
+        const threshold = 50;
         const hasTopspin = this.spin.x > threshold;
         const hasBackspin = this.spin.x < -threshold;
         const hasLeftSpin = this.spin.y < -threshold;
@@ -320,11 +335,18 @@ export class BallPhysics {
     projectTrajectory(steps = 50, dt = 0.016) {
         const tempPos = { ...this.position };
         const tempVel = { ...this.velocity };
-        const tempSpin = { ...this.spin };
         const points = [];
 
         for (let i = 0; i < steps; i++) {
-            tempVel.y += this.gravity * dt * 50;
+            tempVel.y -= this.gravity * dt * 10;
+
+            const speed = Math.hypot(tempVel.x, tempVel.y, tempVel.z);
+            if (speed > 0) {
+                const drag = this.airResistance * speed * speed;
+                tempVel.x -= (tempVel.x / speed) * drag * dt;
+                tempVel.y -= (tempVel.y / speed) * drag * dt;
+                tempVel.z -= (tempVel.z / speed) * drag * dt;
+            }
 
             tempPos.x += tempVel.x * dt;
             tempPos.y += tempVel.y * dt;

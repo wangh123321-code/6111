@@ -128,28 +128,28 @@ export class GestureRecognizer {
 
         let spinType = 'none';
         let intensity = 0;
-        const threshold = 0.008;
+        const threshold = 0.003;
 
         if (maxCurvature > threshold || spinChange > threshold * 0.5) {
             const lateCurvature = avgCurvature3;
 
-            if (lateCurvature > threshold * 0.3) {
+            if (lateCurvature > threshold * 0.2) {
                 spinType = 'sidespin_left';
-                intensity = Math.min(Math.abs(lateCurvature) / 0.03, 1);
-            } else if (lateCurvature < -threshold * 0.3) {
+                intensity = Math.min(Math.abs(lateCurvature) / 0.015, 1);
+            } else if (lateCurvature < -threshold * 0.2) {
                 spinType = 'sidespin_right';
-                intensity = Math.min(Math.abs(lateCurvature) / 0.03, 1);
+                intensity = Math.min(Math.abs(lateCurvature) / 0.015, 1);
             }
 
             const verticalComponent = this.detectVerticalSpin();
-            if (verticalComponent > 0.3) {
+            if (verticalComponent > 0.15) {
                 if (spinType !== 'none') {
                     spinType = spinType === 'sidespin_left' ? 'mixed_left' : 'mixed_right';
                 } else {
                     spinType = 'backspin';
                 }
                 intensity = Math.max(intensity, verticalComponent);
-            } else if (verticalComponent < -0.3) {
+            } else if (verticalComponent < -0.15) {
                 if (spinType !== 'none') {
                     spinType = spinType === 'sidespin_left' ? 'mixed_top_left' : 'mixed_top_right';
                 } else {
@@ -161,7 +161,7 @@ export class GestureRecognizer {
 
         return {
             type: spinType,
-            intensity: Math.min(intensity, 1),
+            intensity: Math.min(Math.max(intensity, 0.3), 1),
             curvatureData: curvatures
         };
     }
@@ -197,7 +197,7 @@ export class GestureRecognizer {
         const firstYChange = firstHalf[firstHalf.length - 1].y - firstHalf[0].y;
         const secondYChange = secondHalf[secondHalf.length - 1].y - secondHalf[0].y;
 
-        const normalized = (secondYChange - firstYChange) / 100;
+        const normalized = (secondYChange - firstYChange) / 50;
         return Math.max(-1, Math.min(1, normalized));
     }
 
