@@ -50,33 +50,35 @@ export class MenuScene extends Phaser.Scene {
         const cardWidth = 300;
         const cardHeight = 280;
         const spacing = 40;
-        const startX = (width - (cardWidth * 3 + spacing * 2)) / 2 + cardWidth / 2;
-        const startY = height / 2 - 20;
+        const startX = (width - (cardWidth * 3 + spacing * 2)) / 2;
+        const startY = height / 2 - 20 - cardHeight / 2;
 
         LEVELS.forEach((level, index) => {
-            const x = startX + index * (cardWidth + spacing);
-            const y = startY;
+            const cardX = startX + index * (cardWidth + spacing);
+            const cardY = startY;
 
             const cardBg = this.add.graphics();
+            cardBg.x = cardX;
+            cardBg.y = cardY;
             cardBg.fillStyle(0x2d3748, 0.9);
             cardBg.lineStyle(2, 0x4a5568, 1);
-            cardBg.fillRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
-            cardBg.strokeRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
+            cardBg.fillRoundedRect(0, 0, cardWidth, cardHeight, 15);
+            cardBg.strokeRoundedRect(0, 0, cardWidth, cardHeight, 15);
 
-            const levelNumber = this.add.text(x, y - cardHeight / 2 + 40, `第 ${level.id} 关`, {
+            const levelNumber = this.add.text(cardX + cardWidth / 2, cardY + 40, `第 ${level.id} 关`, {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '16px',
                 color: '#68d391'
             }).setOrigin(0.5);
 
-            const levelName = this.add.text(x, y - cardHeight / 2 + 70, level.name.split('：')[1], {
+            const levelName = this.add.text(cardX + cardWidth / 2, cardY + 70, level.name.split('：')[1], {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '24px',
                 color: '#ffffff',
                 fontStyle: 'bold'
             }).setOrigin(0.5);
 
-            const description = this.add.text(x, y - cardHeight / 2 + 105, level.description, {
+            const description = this.add.text(cardX + cardWidth / 2, cardY + 105, level.description, {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '12px',
                 color: '#a0aec0',
@@ -84,9 +86,9 @@ export class MenuScene extends Phaser.Scene {
                 wordWrap: { width: cardWidth - 30 }
             }).setOrigin(0.5, 0);
 
-            const spinIcons = this.createSpinIcons(x, y + 10, level.allowedSpins.slice(0, 5));
+            this.drawSpinIcons(cardX + cardWidth / 2, cardY + 155, level.allowedSpins.slice(0, 5));
 
-            const ballsText = this.add.text(x, y + cardHeight / 2 - 50,
+            const ballsText = this.add.text(cardX + cardWidth / 2, cardY + cardHeight - 50,
                 `${level.ballsPerLevel} 球 · ${level.passingScore} 分过关`, {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '13px',
@@ -94,40 +96,41 @@ export class MenuScene extends Phaser.Scene {
             }).setOrigin(0.5);
 
             const buttonBg = this.add.graphics();
+            buttonBg.x = cardX;
+            buttonBg.y = cardY;
             buttonBg.fillStyle(0x48bb78, 1);
-            buttonBg.fillRoundedRect(x - 80, y + cardHeight / 2 - 35, 160, 40, 8);
+            buttonBg.fillRoundedRect(cardWidth / 2 - 80, cardHeight - 35, 160, 40, 8);
 
-            const buttonText = this.add.text(x, y + cardHeight / 2 - 15, '开始练习', {
+            const buttonText = this.add.text(cardX + cardWidth / 2, cardY + cardHeight - 15, '开始练习', {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '16px',
                 color: '#ffffff',
                 fontStyle: 'bold'
             }).setOrigin(0.5);
 
-            const hitZone = this.add.zone(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight)
-                .setOrigin(0)
+            const hitZone = this.add.zone(cardX + cardWidth / 2, cardY + cardHeight / 2, cardWidth, cardHeight)
                 .setInteractive({ useHandCursor: true });
 
             hitZone.on('pointerover', () => {
                 buttonBg.clear();
                 buttonBg.fillStyle(0x38a169, 1);
-                buttonBg.fillRoundedRect(x - 80, y + cardHeight / 2 - 35, 160, 40, 8);
+                buttonBg.fillRoundedRect(cardWidth / 2 - 80, cardHeight - 35, 160, 40, 8);
                 cardBg.clear();
                 cardBg.fillStyle(0x3d4a5c, 0.95);
                 cardBg.lineStyle(2, 0x68d391, 1);
-                cardBg.fillRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
-                cardBg.strokeRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
+                cardBg.fillRoundedRect(0, 0, cardWidth, cardHeight, 15);
+                cardBg.strokeRoundedRect(0, 0, cardWidth, cardHeight, 15);
             });
 
             hitZone.on('pointerout', () => {
                 buttonBg.clear();
                 buttonBg.fillStyle(0x48bb78, 1);
-                buttonBg.fillRoundedRect(x - 80, y + cardHeight / 2 - 35, 160, 40, 8);
+                buttonBg.fillRoundedRect(cardWidth / 2 - 80, cardHeight - 35, 160, 40, 8);
                 cardBg.clear();
                 cardBg.fillStyle(0x2d3748, 0.9);
                 cardBg.lineStyle(2, 0x4a5568, 1);
-                cardBg.fillRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
-                cardBg.strokeRoundedRect(x - cardWidth / 2, y - cardHeight / 2, cardWidth, cardHeight, 15);
+                cardBg.fillRoundedRect(0, 0, cardWidth, cardHeight, 15);
+                cardBg.strokeRoundedRect(0, 0, cardWidth, cardHeight, 15);
             });
 
             hitZone.on('pointerdown', () => {
@@ -136,33 +139,27 @@ export class MenuScene extends Phaser.Scene {
         });
     }
 
-    createSpinIcons(centerX, centerY, spins) {
-        const container = this.add.container(centerX, centerY);
+    drawSpinIcons(centerX, centerY, spins) {
         const spacing = 35;
-        const startX = -(spins.length - 1) * spacing / 2;
+        const startX = centerX - ((spins.length - 1) * spacing) / 2;
 
         spins.forEach((spin, index) => {
             const x = startX + index * spacing;
 
-            const bg = this.add.circle(x, 0, 18, 0x4a5568, 0.8);
-            container.add(bg);
+            this.add.circle(x, centerY, 18, 0x4a5568, 0.8);
 
-            const icon = this.add.text(x, 0, SPIN_ICONS[spin] || '●', {
+            this.add.text(x, centerY, SPIN_ICONS[spin] || '●', {
                 fontFamily: 'Arial',
                 fontSize: '20px',
                 color: '#ffffff',
                 fontStyle: 'bold'
             }).setOrigin(0.5);
-            container.add(icon);
 
-            const name = this.add.text(x, 28, SPIN_NAMES[spin] || '无', {
+            this.add.text(x, centerY + 28, SPIN_NAMES[spin] || '无', {
                 fontFamily: 'Microsoft YaHei',
                 fontSize: '10px',
                 color: '#a0aec0'
             }).setOrigin(0.5);
-            container.add(name);
         });
-
-        return container;
     }
 }

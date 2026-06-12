@@ -107,7 +107,7 @@ export class BallPhysics {
     }
 
     applyForces(dt) {
-        this.velocity.y += this.gravity * dt * 50;
+        this.velocity.y += this.gravity * dt * 15;
 
         const speed = Math.hypot(this.velocity.x, this.velocity.y, this.velocity.z);
         if (speed > 0) {
@@ -246,13 +246,17 @@ export class BallPhysics {
     }
 
     getScreenPosition(cameraConfig) {
-        const { centerX, centerY, vanishingY, scaleFactor } = cameraConfig;
+        const { centerX, vanishingY, height } = cameraConfig;
+        const nearY = height - 80;
+        const farY = vanishingY + 20;
+        const zNear = -100;
+        const zFar = this.tableLength / 2 + 20;
+        const z = this.position.z;
+        const t = Math.max(0, Math.min(1, (z - zNear) / (zFar - zNear)));
+        const perspective = 1 - t * 0.6;
 
-        const z = Math.max(this.position.z, -50);
-        const perspective = 300 / (300 + z);
-
-        const screenX = centerX + this.position.x * perspective * this.scale;
-        const screenY = vanishingY - this.position.y * perspective * this.scale + z * scaleFactor;
+        const screenX = centerX + this.position.x * perspective * this.scale * 1.5;
+        const screenY = nearY + (farY - nearY) * t - this.position.y * perspective * 2;
 
         return {
             x: screenX,

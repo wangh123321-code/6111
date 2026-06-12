@@ -8,8 +8,7 @@ import {
     isZoneMatch,
     SPIN_NAMES,
     SPIN_ICONS,
-    ZONE_NAMES,
-    SPIN_TYPES
+    ZONE_NAMES
 } from '../config/levels.js';
 
 export class GameScene extends Phaser.Scene {
@@ -63,7 +62,8 @@ export class GameScene extends Phaser.Scene {
             centerX: this.width / 2,
             centerY: this.height / 2 + 50,
             vanishingY: this.height * 0.25,
-            scaleFactor: 1.2
+            scaleFactor: 1.2,
+            height: this.height
         };
 
         this.drawTable();
@@ -104,12 +104,9 @@ export class GameScene extends Phaser.Scene {
 
         const halfLength = tableLength / 2;
         const backLineY = nearY - halfLength * scaleFactor * 0.7;
-        this.tableGraphics.lineStyle(2, 0xffffff, 0.5);
-        this.tableGraphics.setLineDash([10, 10]);
         const backLineLeftX = centerX - (tableWidth / 2) * 0.85;
         const backLineRightX = centerX + (tableWidth / 2) * 0.85;
-        this.tableGraphics.lineBetween(backLineLeftX, backLineY, backLineRightX, backLineY);
-        this.tableGraphics.setLineDash([]);
+        this.drawDashedLine(backLineLeftX, backLineY, backLineRightX, backLineY, 10, 10, 0xffffff, 0.5, 2);
 
         const netY = nearY - (tableLength / 2) * scaleFactor * 0.5;
         const netLeftX = centerX - (tableWidth / 2) * 0.7;
@@ -559,14 +556,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     worldToScreen(x, y, z) {
-        const { centerX, vanishingY, scaleFactor } = this.cameraConfig;
-        const zClamped = Math.max(z, -50);
-        const perspective = 300 / (300 + zClamped);
-        const scale = this.ballPhysics.scale;
+        const { centerX } = this.cameraConfig;
+        const nearY = this.height - 80;
+        const farY = this.cameraConfig.vanishingY + 20;
+        const zNear = -100;
+        const zFar = this.ballPhysics.tableLength / 2 + 20;
+        const t = Phaser.Math.Clamp((z - zNear) / (zFar - zNear), 0, 1);
+        const perspective = 1 - t * 0.6;
 
         return {
-            x: centerX + x * perspective * scale,
-            y: vanishingY - y * perspective * scale + zClamped * scaleFactor,
+            x: centerX + x * perspective * this.ballPhysics.scale * 1.5,
+            y: nearY + (farY - nearY) * t - y * perspective * 2,
             scale: perspective
         };
     }
@@ -604,13 +604,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         const toScreen = (x, z) => {
-            const zClamped = Math.max(z, -50);
-            const perspective = 300 / (300 + zClamped);
-            const scale = this.ballPhysics.scale;
-            return {
-                x: centerX + x * perspective * scale,
-                y: vanishingY + zClamped * scaleFactor
-            };
+            return this.worldToScreen(x, 0, z);
         };
 
         const tl = toScreen(xMin, zMin);
@@ -644,6 +638,7 @@ export class GameScene extends Phaser.Scene {
     resetBall() {
         this.ballPhysics.reset({ x: 0, y: 20, z: -100 });
         this.ballLanded = false;
+        this._missHandled = false;
         this.landingGraphics.clear();
         this.spinIndicator.clear();
 
@@ -707,7 +702,8 @@ export class GameScene extends Phaser.Scene {
             this.drawTrajectory();
         }
 
-        if (!this.ballPhysics.isActive && !this.ballLanded && this.currentBall > 0) {
+        if (!this.ballPhysics.isActive && !this.ballLanded && this.currentBall > 0 && !this._missHandled) {
+            this._missHandled = true;
             this.time.delayedCall(500, () => {
                 if (!this.ballLanded) {
                     this.onBallLanded(null, { x: 0, y: 0, z: 0 });
@@ -739,5 +735,26 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.trajectoryGraphics.strokePath();
+    }
+
+    drawDashedLine(x1, y1, x2, y2, dashLength, gapLength, color, alpha, width) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.hypot(dx, dy);
+        const dashTotal = dashLength + gapLength;
+        const dashCount = Math.floor(length / dashTotal);
+
+        for (let i = 0; i < dashCount; i++) {
+            const startT = (i * dashTotal) / length;
+            const endT = (i * dashTotal + dashLength) / length;
+
+            const startX = x1 + dx * startT;
+            const startY = y1 + dy * startT;
+            const endX = x1 + dx * Math.min(endT, 1);
+            const endY = y1 + dy * Math.min(endT, 1);
+
+            this.tableGraphics.lineStyle(width, color, alpha);
+            this.tableGraphics.lineBetween(startX, startY, endX, endY);
+        }
     }
 }
